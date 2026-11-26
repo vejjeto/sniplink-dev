@@ -1,6 +1,7 @@
 "use client";
 
 import { useUiToast } from "@/components/toast-provider";
+import { useLocale } from "@/lib/i18n";
 import type { LinkWithStatus } from "@/lib/links-service";
 import type { OpenGraphPreview } from "@/lib/opengraph";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -30,17 +31,18 @@ interface CreatedResult {
   qrPngDataUrl: string;
 }
 
-const TTL_OPTIONS = [
-  { value: "never", label: "No expiration" },
-  { value: "1h", label: "1 hour" },
-  { value: "24h", label: "24 hours" },
-  { value: "7d", label: "7 days" },
-  { value: "30d", label: "30 days" },
-] as const;
-
 export function ShortenerWorkbench(): React.ReactElement {
   const queryClient = useQueryClient();
   const { pushToast } = useUiToast();
+  const { t } = useLocale();
+
+  const ttlOptions = [
+    { value: "never", label: t.workbench.ttlNever },
+    { value: "1h", label: t.workbench.ttl1h },
+    { value: "24h", label: t.workbench.ttl24h },
+    { value: "7d", label: t.workbench.ttl7d },
+    { value: "30d", label: t.workbench.ttl30d },
+  ] as const;
 
   const [url, setUrl] = useState("");
   const [customAlias, setCustomAlias] = useState("");
@@ -219,15 +221,13 @@ export function ShortenerWorkbench(): React.ReactElement {
           <div className="space-y-2">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-sky-500/30 bg-sky-500/10 px-3 py-1 text-xs font-medium text-sky-700 dark:text-sky-300">
               <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
-              Zero-Friction URL Shortener · HTTP 302 + 410 Gone
+              {t.hero.badge}
             </span>
             <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-3xl">
-              Shorten, track &amp; expire links in seconds.
+              {t.hero.title}
             </h1>
             <p className="max-w-2xl text-sm text-slate-600 dark:text-slate-300 sm:text-base">
-              No login wall. Cryptographic Base62 slugs, SSRF-safe OpenGraph
-              previews, deterministic TTL expiration, and downloadable SVG/PNG
-              QR codes.
+              {t.hero.subtitle}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -236,14 +236,14 @@ export function ShortenerWorkbench(): React.ReactElement {
               className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-sky-500/40 bg-sky-500/10 px-4 py-2.5 text-sm font-semibold text-sky-700 transition hover:bg-sky-500/20 dark:text-sky-300"
             >
               <Sparkles className="h-4 w-4" aria-hidden="true" />
-              Abrir Demo (Sin registro)
+              {t.hero.demoCta}
             </Link>
             <Link
               href="/dashboard"
               className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
             >
               <BarChart3 className="h-4 w-4" aria-hidden="true" />
-              Ver Dashboard Demo
+              {t.hero.dashboardCta}
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </Link>
           </div>
@@ -252,7 +252,7 @@ export function ShortenerWorkbench(): React.ReactElement {
         <form onSubmit={handleSubmit} className="mt-2 space-y-4">
           <div className="flex flex-col gap-2 sm:flex-row">
             <label htmlFor="target-url" className="sr-only">
-              Destination URL
+              {t.workbench.urlLabel}
             </label>
             <input
               id="target-url"
@@ -280,7 +280,7 @@ export function ShortenerWorkbench(): React.ReactElement {
               ) : (
                 <Eye className="h-4 w-4" aria-hidden="true" />
               )}
-              <span>OG Preview</span>
+              <span>{t.workbench.ogPreview}</span>
             </button>
             <button
               type="submit"
@@ -292,7 +292,11 @@ export function ShortenerWorkbench(): React.ReactElement {
               ) : (
                 <QrCode className="h-4 w-4" aria-hidden="true" />
               )}
-              <span>{submitting ? "Shortening..." : "Shorten URL"}</span>
+              <span>
+                {submitting
+                  ? t.workbench.shortening
+                  : t.workbench.shortenButton}
+              </span>
             </button>
           </div>
 
@@ -302,12 +306,12 @@ export function ShortenerWorkbench(): React.ReactElement {
                 htmlFor="custom-alias"
                 className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400"
               >
-                Custom Alias (optional)
+                {t.workbench.customAliasLabel}
               </label>
               <input
                 id="custom-alias"
                 type="text"
-                placeholder="e.g. launch-v2"
+                placeholder={t.workbench.customAliasPlaceholder}
                 value={customAlias}
                 onChange={(e) => setCustomAlias(e.target.value)}
                 className="w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 font-mono text-xs text-slate-900 placeholder:text-slate-400 focus:border-sky-500 focus:outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
@@ -319,7 +323,7 @@ export function ShortenerWorkbench(): React.ReactElement {
                 htmlFor="ttl-select"
                 className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400"
               >
-                Time To Live (TTL)
+                {t.workbench.ttlLabel}
               </label>
               <select
                 id="ttl-select"
@@ -327,7 +331,7 @@ export function ShortenerWorkbench(): React.ReactElement {
                 onChange={(e) => setTtl(e.target.value)}
                 className="w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-xs text-slate-900 focus:border-sky-500 focus:outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
               >
-                {TTL_OPTIONS.map((opt) => (
+                {ttlOptions.map((opt) => (
                   <option key={opt.value} value={opt.value}>
                     {opt.label}
                   </option>
@@ -340,14 +344,14 @@ export function ShortenerWorkbench(): React.ReactElement {
                 htmlFor="max-clicks"
                 className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400"
               >
-                Max Clicks (optional)
+                {t.workbench.maxClicksLabel}
               </label>
               <input
                 id="max-clicks"
                 type="number"
                 min={1}
                 max={1000000}
-                placeholder="Unlimited"
+                placeholder={t.workbench.maxClicksPlaceholder}
                 value={maxClicks}
                 onChange={(e) => setMaxClicks(e.target.value)}
                 className="w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-sky-500 focus:outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
@@ -366,7 +370,7 @@ export function ShortenerWorkbench(): React.ReactElement {
                     : "border-slate-300 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300"
                 }`}
               >
-                <span>Modo Campaña (@dev-team)</span>
+                <span>{t.workbench.campaignModeLabel}</span>
                 <span
                   className={`inline-flex h-4 w-7 items-center rounded-full p-0.5 transition ${
                     campaignMode
@@ -385,8 +389,8 @@ export function ShortenerWorkbench(): React.ReactElement {
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400">
             {campaignMode
-              ? "Campaign Mode active: creates distinct slugs per campaign under @dev-team even for identical URLs."
-              : "Anonymous Mode: standard URLs without custom alias/TTL are deduplicated to reuse active short slugs."}
+              ? t.workbench.campaignModeHint
+              : t.workbench.anonymousModeHint}
           </p>
         </form>
 
@@ -405,7 +409,7 @@ export function ShortenerWorkbench(): React.ReactElement {
               className="inline-flex items-center gap-1 rounded-lg border border-rose-400/40 px-2.5 py-1 text-xs font-medium hover:bg-rose-500/10"
             >
               <RefreshCw className="h-3 w-3" aria-hidden="true" />
-              Dismiss
+              {t.workbench.dismiss}
             </button>
           </div>
         )}
@@ -441,7 +445,7 @@ export function ShortenerWorkbench(): React.ReactElement {
                     </span>
                     {preview.fallback && (
                       <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[10px] font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                        Offline Fallback
+                        {t.workbench.offlineFallback}
                       </span>
                     )}
                   </div>
@@ -467,8 +471,8 @@ export function ShortenerWorkbench(): React.ReactElement {
             <div className="flex flex-wrap items-center gap-2">
               <span className="rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
                 {result.deduplicated
-                  ? "Deduplicated Active Link"
-                  : "Short Link Ready"}
+                  ? t.workbench.deduplicatedBadge
+                  : t.workbench.readyBadge}
               </span>
               {result.link.userId && (
                 <span className="rounded-full bg-sky-500/15 px-2.5 py-0.5 font-mono text-xs text-sky-700 dark:text-sky-300">
@@ -495,7 +499,7 @@ export function ShortenerWorkbench(): React.ReactElement {
             </div>
 
             <p className="truncate text-xs text-slate-500 dark:text-slate-400">
-              Destination: {result.link.originalUrl}
+              {t.workbench.destinationLabel}: {result.link.originalUrl}
             </p>
 
             <div className="flex flex-wrap gap-2">
@@ -512,7 +516,7 @@ export function ShortenerWorkbench(): React.ReactElement {
                 ) : (
                   <Copy className="h-3.5 w-3.5" aria-hidden="true" />
                 )}
-                {copied ? "Copied!" : "Copy Short URL"}
+                {copied ? t.workbench.copied : t.workbench.copyShortUrl}
               </button>
               <button
                 type="button"
@@ -521,7 +525,7 @@ export function ShortenerWorkbench(): React.ReactElement {
                 className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium text-slate-700 transition hover:bg-slate-100 disabled:opacity-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
               >
                 <Download className="h-3.5 w-3.5" aria-hidden="true" />
-                Download SVG
+                {t.workbench.downloadSvg}
               </button>
               <button
                 type="button"
@@ -530,7 +534,7 @@ export function ShortenerWorkbench(): React.ReactElement {
                 className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium text-slate-700 transition hover:bg-slate-100 disabled:opacity-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
               >
                 <Download className="h-3.5 w-3.5" aria-hidden="true" />
-                Download PNG
+                {t.workbench.downloadPng}
               </button>
             </div>
           </div>

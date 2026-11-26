@@ -9,6 +9,7 @@ import { ensureInitialized, resetDbCache } from "@/db";
 import { apiKeys } from "@/db/schema";
 import { extractBearerKey, generateApiKey, hashApiKey } from "@/lib/api-keys";
 import { getEnv, resetEnvCache } from "@/lib/env";
+import { TRANSLATIONS } from "@/lib/i18n";
 import {
   cleanupExpiredLinks,
   createShortLink,
@@ -444,5 +445,31 @@ describe("SnipLink Dev — Core Domain & Integration Suite", () => {
       POSTGRES_URL: "not-a-valid-url",
     });
     expect(skipped.POSTGRES_URL).toBe("not-a-valid-url");
+  });
+
+  it("14. maintains full i18n dictionary key parity between es and en", () => {
+    const collectKeys = (obj: Record<string, unknown>, prefix = ""): string[] =>
+      Object.entries(obj)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .flatMap(([key, value]) => {
+          const path = prefix ? `${prefix}.${key}` : key;
+          if (typeof value === "object" && value !== null) {
+            return collectKeys(value as Record<string, unknown>, path);
+          }
+          expect(typeof value).toBe("string");
+          expect((value as string).trim().length).toBeGreaterThan(0);
+          return [path];
+        });
+
+    const esKeys = collectKeys(
+      TRANSLATIONS.es as unknown as Record<string, unknown>,
+    );
+    const enKeys = collectKeys(
+      TRANSLATIONS.en as unknown as Record<string, unknown>,
+    );
+
+    expect(esKeys).toEqual(enKeys);
+    expect(TRANSLATIONS.es.nav.shortener).toBe("Acortador");
+    expect(TRANSLATIONS.en.nav.shortener).toBe("Shortener");
   });
 });

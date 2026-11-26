@@ -1,21 +1,24 @@
 "use client";
 
 import { HealthBadge } from "@/components/health-badge";
+import { LanguageToggle } from "@/components/language-toggle";
+import { useLocale } from "@/lib/i18n";
 import { BarChart3, BookOpen, Link2, Moon, Sparkles, Sun } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
-const NAV_ITEMS = [
-  { href: "/", label: "Shortener", icon: Link2 },
-  { href: "/demo", label: "Demo", icon: Sparkles },
-  { href: "/dashboard", label: "Dashboard", icon: BarChart3 },
-  { href: "/docs", label: "API Docs", icon: BookOpen },
-] as const;
-
 export function SiteHeader(): React.ReactElement {
   const pathname = usePathname();
+  const { t } = useLocale();
   const [dark, setDark] = useState(true);
+
+  const navItems = [
+    { href: "/", label: t.nav.shortener, icon: Link2 },
+    { href: "/demo", label: t.nav.demo, icon: Sparkles },
+    { href: "/dashboard", label: t.nav.dashboard, icon: BarChart3 },
+    { href: "/docs", label: t.nav.docs, icon: BookOpen },
+  ] as const;
 
   useEffect(() => {
     const stored =
@@ -57,7 +60,7 @@ export function SiteHeader(): React.ReactElement {
           aria-label="Primary navigation"
           className="flex items-center gap-1 sm:gap-2"
         >
-          {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
+          {navItems.map(({ href, label, icon: Icon }) => {
             const active = pathname === href;
             return (
               <Link
@@ -76,6 +79,7 @@ export function SiteHeader(): React.ReactElement {
             );
           })}
 
+          <LanguageToggle />
           <button
             type="button"
             onClick={toggleTheme}
