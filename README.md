@@ -1,39 +1,39 @@
 # SnipLink Dev
 
-[![CI](https://github.com/diego/sniplink-dev/actions/workflows/ci.yml/badge.svg)](./.github/workflows/ci.yml)
+[![CI](https://github.com/vejjeto/sniplink-dev/actions/workflows/ci.yml/badge.svg)](./.github/workflows/ci.yml)
 
-**Zero-friction developer URL shortener** with cryptographic Base62 slugs, SSRF-guarded OpenGraph previews, non-blocking HTTP 302 click telemetry, deterministic `410 Gone` TTL/max-clicks enforcement, SHA-256 API keys, RFC 7807 Problem Details, and OpenAPI 3.1.0 docs.
+**Acortador de enlaces para desarrolladores sin fricción**, con slugs criptográficos Base62, vista previa OpenGraph protegida contra SSRF, telemetría de clics no bloqueante vía HTTP `302`, expiración determinista `410 Gone` por TTL/máximo de clics, API Keys SHA-256, errores RFC 7807 Problem Details y documentación OpenAPI 3.1.0.
 
-> **5-second Demo (no login):** Start the app and open [`http://localhost:3001/demo`](http://localhost:3001/demo) or [`/dashboard`](http://localhost:3001/dashboard) with pre-seeded links, Recharts telemetry, and downloadable SVG/PNG QR codes.
+> **Demo en 5 segundos (sin registro):** Inicia la aplicación y abre [`http://localhost:3001/demo`](http://localhost:3001/demo) o [`/dashboard`](http://localhost:3001/dashboard) con enlaces precargados, analíticas en Recharts y códigos QR descargables en SVG/PNG.
 
 ---
 
-## Architecture
+## Arquitectura
 
 ```mermaid
 flowchart LR
-  Client[Browser / cURL / SDK] -->|POST /api/links| API[Next.js Route Handlers]
-  API -->|Zod + SSRF Guard| Sec[url-security & slug]
-  Sec -->|Base62 5-retry| DB[(SQLite / PostgreSQL via Drizzle)]
-  API -->|HMAC-SHA256 4s timeout| Hook[Optional Webhook]
+  Client[Navegador / cURL / SDK] -->|POST /api/links| API[Next.js Route Handlers]
+  API -->|Zod + Guardia SSRF| Sec[url-security y slug]
+  Sec -->|Base62 5 reintentos| DB[(SQLite / PostgreSQL vía Drizzle)]
+  API -->|HMAC-SHA256 timeout 4s| Hook[Webhook opcional]
   Client -->|GET /:slug| Redir[302 Found / 410 Gone]
   Redir -->|queueMicrotask| DB
-  Client -->|GET /dashboard| UI[Recharts 14-day & Device Analytics]
+  Client -->|GET /dashboard| UI[Recharts 14 días y Dispositivos]
 ```
 
 ---
 
-## Architecture Decision Records (ADRs)
+## Decisiones Técnicas Clave (ADRs)
 
-| Decision | Choice | Why |
+| Decisión | Elección | Por qué |
 | --- | --- | --- |
-| **Redirect Status** | `302 Found` + `Cache-Control: no-store` over `301` | Browsers cache `301` permanently, starving click telemetry and bypassing `410 Gone` TTL/max-clicks checks. |
-| **Slug Generation** | 7-char Base62 (`crypto.randomBytes` rejection sampling) + 5-attempt retry | Avoids predictable sequential IDs and modulo bias while bounding DB collision retries under `O(1)` expected attempts. |
-| **Link Deduplication** | Anonymous mode deduplicates; Campaign mode (`userId` / API key) creates distinct slugs | Keeps ad-hoc sharing clean and idempotent while allowing teams to track separate campaigns for the same destination URL. |
+| **Código de redirección** | `302 Found` + `Cache-Control: no-store` en lugar de `301` | Los navegadores cachean `301` de forma permanente, rompiendo el conteo de clics y saltándose la validación de expiración `410 Gone`. |
+| **Generación de slugs** | Base62 de 7 caracteres (`crypto.randomBytes` con rejection sampling) + 5 reintentos | Evita IDs secuenciales predecibles y sesgo de módulo, acotando colisiones en BD con costo esperado $O(1)$. |
+| **Deduplicación de enlaces** | Modo anónimo deduplica; modo campaña (`userId` / API key) crea slugs distintos | Mantiene idempotente el uso rápido sin cuenta, mientras permite a equipos medir campañas separadas hacia la misma URL destino. |
 
 ---
 
-## Quick Start (3 Steps with `pnpm`)
+## Ejecución Local en 3 Pasos (`pnpm`)
 
 ```bash
 pnpm install
@@ -41,23 +41,23 @@ pnpm db:migrate && pnpm db:seed
 pnpm dev
 ```
 
-Open `http://localhost:3001` (or `/demo` for instant sandbox + analytics).
+Abre `http://localhost:3001` (o `/demo` para probar el acortador y las analíticas al instante).
 
-### Environment Variables
+### Variables de Entorno
 
-| Variable | Default | Description |
+| Variable | Valor por defecto | Descripción |
 | --- | --- | --- |
-| `DATABASE_URL` | `file:./data/sniplink.db` | SQLite file path or `:memory:` for tests |
-| `POSTGRES_URL` | *(optional)* | PostgreSQL connection URL (e.g. `docker-compose.yml` Postgres 17) |
-| `NEXT_PUBLIC_APP_URL` | `http://localhost:3001` | Canonical origin for short URLs and OpenAPI server |
-| `WEBHOOK_URL` | *(optional)* | Target URL for HMAC-SHA256 `link.created` webhooks |
-| `WEBHOOK_SECRET` | *(optional)* | Secret used to sign `X-Portfolio-Signature` |
-| `RATE_LIMIT_MAX` | `40` | Max `POST /api/links` requests per IP per 60s window |
+| `DATABASE_URL` | `file:./data/sniplink.db` | Ruta del archivo SQLite local o `:memory:` en tests |
+| `POSTGRES_URL` | *(opcional)* | Cadena de conexión PostgreSQL 17 (`docker-compose.yml`) |
+| `NEXT_PUBLIC_APP_URL` | `http://localhost:3001` | Origen canónico para enlaces cortos y servidor OpenAPI |
+| `WEBHOOK_URL` | *(opcional)* | URL destino para webhooks `link.created` firmados con HMAC-SHA256 |
+| `WEBHOOK_SECRET` | *(opcional)* | Secreto para firmar el header `X-Portfolio-Signature` |
+| `RATE_LIMIT_MAX` | `40` | Máximo de peticiones `POST /api/links` por IP cada 60s |
 
 ---
 
-## Honest Trade-offs (100 → 100k Users)
+## Trade-offs Honestos (100 → 100k Usuarios)
 
-1. **In-memory IP rate limiter** (`src/lib/rate-limit.ts`): Zero-dependency sliding window works great for a single Node instance; multi-instance deployments need Redis/Upstash to share counters.
-2. **Embedded SQLite default + `queueMicrotask` telemetry**: Gives sub-millisecond local reads and non-blocking redirects, but high-write concurrency at 100k users should switch to PostgreSQL (`docker-compose.yml`) and a durable queue for click events.
-3. **Live OpenGraph scraping with SSRF guard**: Blocks private/loopback CIDRs on `GET /api/og-preview`, though DNS rebinding protection at scale would require pinning the resolved IP at socket connect time.
+1. **Rate limiter por IP en memoria** (`src/lib/rate-limit.ts`): Ventana deslizante sin dependencias externas ideal para una sola instancia Node; múltiples réplicas requieren Redis/Upstash para compartir contadores.
+2. **SQLite embebido + telemetría con `queueMicrotask`**: Ofrece lecturas locales sub-milisegundo y redirecciones no bloqueantes; ante alta concurrencia de escritura (100k usuarios) conviene migrar a PostgreSQL (`docker-compose.yml`) y una cola durable para eventos de clic.
+3. **Scraping OpenGraph en vivo con guardia SSRF**: Bloquea rangos privados y loopback en `GET /api/og-preview`; a gran escala, la defensa total contra *DNS rebinding* requiere fijar la IP resuelta al abrir el socket.
