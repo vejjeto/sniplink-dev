@@ -4,6 +4,10 @@
 
 **Acortador de enlaces para desarrolladores sin fricción**, con slugs criptográficos Base62, vista previa OpenGraph protegida contra SSRF, telemetría de clics no bloqueante vía HTTP `302`, expiración determinista `410 Gone` por TTL/máximo de clics, API Keys SHA-256, errores RFC 7807 Problem Details y documentación OpenAPI 3.1.0.
 
+## Qué hace este proyecto
+
+**SnipLink Dev** permite acortar URLs largas en enlaces cortos seguros, generar códigos QR descargables (SVG/PNG) y medir en tiempo real cuántos clics recibe cada enlace, desde qué dispositivo y en qué días. También permite configurar enlaces con fecha de expiración o límite máximo de clics, ver vista previa OpenGraph del destino y consumir todo mediante API REST con API Keys.
+
 > **Demo en 5 segundos (sin registro):** Inicia la aplicación y abre [`http://localhost:3001/demo`](http://localhost:3001/demo) o [`/dashboard`](http://localhost:3001/dashboard) con enlaces precargados, analíticas en Recharts y códigos QR descargables en SVG/PNG.
 
 ---
